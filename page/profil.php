@@ -1,5 +1,6 @@
 <?php
 require_once '../inc/connexion.php';
+require_once '../inc/image_functions.php';
 requireLogin();
 
 $error = '';
@@ -72,6 +73,36 @@ $stats_query = "
 ";
 $stats_result = mysqli_query(dbconnect(), $stats_query);
 $stats = mysqli_fetch_assoc($stats_result);
+
+// Récupérer les objets du membre regroupés par catégorie
+$objets_par_categorie_query = "
+    SELECT 
+        o.id_objet,
+        o.nom_objet,
+        o.description,
+        o.etat,
+        o.disponible,
+        o.date_ajout,
+        c.nom_categorie,
+        c.id_categorie,
+        (SELECT img.nom_image FROM images_objet img WHERE img.id_objet = o.id_objet ORDER BY img.id_image LIMIT 1) as image_principale,
+        (SELECT COUNT(*) FROM emprunt e WHERE e.id_objet = o.id_objet AND e.date_retour IS NULL) as est_emprunte
+    FROM objet o
+    JOIN categorie_objet c ON o.id_categorie = c.id_categorie
+    WHERE o.id_membre = " . $_SESSION['user_id'] . "
+    ORDER BY c.nom_categorie, o.nom_objet
+";
+$objets_result = mysqli_query(dbconnect(), $objets_par_categorie_query);
+
+// Organiser les objets par catégorie
+$objets_par_categorie = [];
+while ($objet = mysqli_fetch_assoc($objets_result)) {
+    $categorie = $objet['nom_categorie'];
+    if (!isset($objets_par_categorie[$categorie])) {
+        $objets_par_categorie[$categorie] = [];
+    }
+    $objets_par_categorie[$categorie][] = $objet;
+}
 ?>
 
 <!DOCTYPE html>
@@ -82,6 +113,43 @@ $stats = mysqli_fetch_assoc($stats_result);
     <title>Mon profil - Système d'emprunt</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .bg-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            margin: 0 auto;
+        }
+        .objet-card {
+            transition: transform 0.3s;
+            border-radius: 10px;
+        }
+        .objet-card:hover {
+            transform: translateY(-5px);
+        }
+        .objet-image {
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px 10px 0 0;
+        }
+    </style>
 </head>
 <body class="bg-light">
     
