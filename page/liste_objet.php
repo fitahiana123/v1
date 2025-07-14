@@ -1,5 +1,6 @@
 <?php
 require_once '../inc/connexion.php';
+require_once '../inc/image_functions.php';
 requireLogin();
 
 
@@ -40,11 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $categories_query = "SELECT * FROM categorie_objet ORDER BY nom_categorie";
 $categories_result = mysqli_query(dbconnect(), $categories_query);
 
-
+// Filtres
 $filter_category = isset($_GET['categorie']) ? intval($_GET['categorie']) : 0;
 $search = isset($_GET['search']) ? mysqli_real_escape_string(dbconnect(), $_GET['search']) : '';
+$filter_disponible = isset($_GET['disponible']) ? true : false;
 
-
+// Construction de la clause WHERE
 $where_conditions = [];
 if ($filter_category > 0) {
     $where_conditions[] = "o.id_categorie = $filter_category";
@@ -52,14 +54,20 @@ if ($filter_category > 0) {
 if (!empty($search)) {
     $where_conditions[] = "(o.nom_objet LIKE '%$search%' OR m.nom LIKE '%$search%')";
 }
+if ($filter_disponible) {
+    $where_conditions[] = "o.disponible = 1 AND e.id_emprunt IS NULL";
+}
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
-
+// Requête principale avec images
 $query = "
     SELECT 
         o.id_objet,
         o.nom_objet,
+        o.description,
+        o.etat,
+        o.disponible,
         c.nom_categorie,
         m.nom as proprietaire,
         m.ville,
@@ -68,7 +76,8 @@ $query = "
         e.date_emprunt,
         e.date_retour,
         e.id_membre as id_emprunteur,
-        emp.nom as nom_emprunteur
+        emp.nom as nom_emprunteur,
+        (SELECT img.nom_image FROM images_objet img WHERE img.id_objet = o.id_objet ORDER BY img.id_image LIMIT 1) as image_principale
     FROM objet o
     JOIN categorie_objet c ON o.id_categorie = c.id_categorie
     JOIN membre m ON o.id_membre = m.id_membre
@@ -188,14 +197,14 @@ $stats = mysqli_fetch_assoc($stats_result);
         </div>
 
         <!-- Filtres -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5><i class="fas fa-filter"></i> Filtres de recherche</h5>
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i> Filtres de recherche</h5>
             </div>
             <div class="card-body">
                 <form method="GET" class="row g-3">
-                    <div class="col-md-4">
-                        <label for="search" class="form-label">Rechercher</label>
+                    <div class="col-md-3">
+                        <label for="search" class="form-label fw-bold">Rechercher</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
                             <input type="text" class="form-control" id="search" name="search" 
@@ -203,11 +212,14 @@ $stats = mysqli_fetch_assoc($stats_result);
                                    value="<?= htmlspecialchars($search) ?>">
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <label for="categorie" class="form-label">Catégorie</label>
+                    <div class="col-md-3">
+                        <label for="categorie" class="form-label fw-bold">Catégorie</label>
                         <select class="form-select" id="categorie" name="categorie">
                             <option value="0">Toutes les catégories</option>
-                            <?php while ($category = mysqli_fetch_assoc($categories_result)): ?>
+                            <?php 
+                            // Réinitialiser le résultat des catégories
+                            mysqli_data_seek($categories_result, 0);
+                            while ($category = mysqli_fetch_assoc($categories_result)): ?>
                                 <option value="<?= $category['id_categorie'] ?>" 
                                         <?= $filter_category == $category['id_categorie'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($category['nom_categorie']) ?>
@@ -215,13 +227,25 @@ $stats = mysqli_fetch_assoc($stats_result);
                             <?php endwhile; ?>
                         </select>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary me-2">
-                            <i class="fas fa-search"></i> Filtrer
-                        </button>
-                        <a href="liste_objet.php" class="btn btn-outline-secondary">
-                            <i class="fas fa-redo"></i> Reset
-                        </a>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Disponibilité</label>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="disponible" name="disponible" 
+                                   <?= $filter_disponible ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="disponible">
+                                <i class="fas fa-check-circle text-success me-1"></i>Disponibles uniquement
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="w-100">
+                            <button type="submit" class="btn btn-primary me-2 w-100 mb-2">
+                                <i class="fas fa-search me-1"></i> Filtrer
+                            </button>
+                            <a href="liste_objet.php" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i> Reset
+                            </a>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -232,20 +256,40 @@ $stats = mysqli_fetch_assoc($stats_result);
             <?php if (mysqli_num_rows($result) > 0): ?>
                 <?php while ($objet = mysqli_fetch_assoc($result)): ?>
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card object-card h-100 <?= $objet['id_emprunt'] ? 'borrowed-overlay' : 'available-overlay' ?>">
+                        <div class="card object-card h-100 shadow <?= $objet['id_emprunt'] ? 'borrowed-overlay' : 'available-overlay' ?>">
+                            <!-- Image de l'objet -->
+                            <div class="position-relative">
+                                <?php
+                                $image_path = !empty($objet['image_principale']) ? 
+                                    '../assets/images/objets/' . $objet['image_principale'] : 
+                                    '../assets/images/objets/default.png';
+                                if (!file_exists($image_path)) {
+                                    $image_path = '../assets/images/objets/default.png';
+                                }
+                                ?>
+                                <img src="<?= $image_path ?>" class="card-img-top" alt="<?= htmlspecialchars($objet['nom_objet']) ?>" 
+                                     style="height: 200px; object-fit: cover; cursor: pointer;" 
+                                     onclick="window.location.href='detail_objet.php?id=<?= $objet['id_objet'] ?>'">
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <?php if ($objet['id_emprunt']): ?>
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-handshake"></i> Emprunté
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Disponible
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <span class="badge bg-secondary"><?= htmlspecialchars($objet['nom_categorie']) ?></span>
-                                <?php if ($objet['id_emprunt']): ?>
-                                    <span class="badge bg-warning">
-                                        <i class="fas fa-handshake"></i> Emprunté
-                                    </span>
-                                <?php else: ?>
-                                    <span class="badge bg-success">
-                                        <i class="fas fa-check"></i> Disponible
-                                    </span>
-                                <?php endif; ?>
+                                <small class="text-muted">
+                                    <i class="fas fa-star me-1"></i><?= htmlspecialchars($objet['etat']) ?>
+                                </small>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body")
                                 <h5 class="card-title">
                                     <i class="fas fa-box"></i> <?= htmlspecialchars($objet['nom_objet']) ?>
                                 </h5>
