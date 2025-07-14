@@ -1,0 +1,142 @@
+===============================
+TO-DO LIST - SYSTÈME D'EMPRUNT
+===============================
+
+� PAGES À CRÉER/MODIFIER
+========================
+
+□ Créer page index.php (page d'accueil publique)
+  - Section héro avec présentation du site
+  - Section fonctionnalités (partage, emprunts, communauté)
+  - inscription
+  - Footer avec liens utiles
+
+✅ Page login.php (FAIT)
+✅ Page inscription.php (FAIT) 
+✅ Page dashboard.php (FAIT)
+✅ Page mes_emprunts.php (FAIT - corrigé)
+
+□ Créer page liste_objet.php
+  - Affichage de tous les objets disponibles
+  - Système de filtres (catégorie, ville, disponibilité)
+  - Barre de recherche
+  - Pagination des résultats
+  - Cards objets avec image, nom, propriétaire, ville
+  - Bouton "Emprunter" pour chaque objet
+
+□ Créer page mes_objets.php
+  - Liste des objets de l'utilisateur connecté
+  - Bouton "Ajouter un objet"
+  - Statut de chaque objet (disponible/emprunté)
+  - Actions: modifier, supprimer, voir emprunts
+
+□ Créer page ajouter_objet.php
+  - Formulaire d'ajout d'objet
+  - Champs: nom, description, catégorie, état, images
+  - Upload multiple d'images
+  - Validation des données
+
+□ Créer page modifier_objet.php?id=X
+  - Formulaire de modification d'objet existant
+  - Pré-remplissage des champs
+  - Gestion des images existantes
+  - Suppression/ajout d'images
+
+□ Créer page detail_objet.php?id=X
+  - Affichage détaillé d'un objet
+  - Galerie d'images
+  - Informations du propriétaire
+  - Bouton emprunter (si disponible)
+  - Historique des emprunts de cet objet
+
+□ Créer page profil.php
+  - Informations personnelles de l'utilisateur
+  - Modification des données (nom, email, ville, etc.)
+  - Upload d'image de profil
+  - Changement de mot de passe
+
+□ Créer page historique.php
+  - Historique complet des emprunts (donnés et reçus)
+  - Filtres par date, statut, type
+  - Export en PDF/Excel
+  - Statistiques personnelles
+
+□ Créer page logout.php
+  - Destruction de la session
+  - Redirection vers index.php
+  - Message de confirmation
+
+🎨 AMÉLIORER L'INTERFACE
+======================
+□ Améliorer dashboard.php
+  - Ajouter widget météo
+  - Graphiques des statistiques
+  - Raccourcis vers actions fréquentes
+  - Notifications en temps réel
+
+□ Créer composants réutilisables
+  - Template de navigation
+  - Template de footer
+  - Card objet standardisée
+  - Modal de confirmation
+
+□ Optimiser pour mobile
+  - Menu hamburger pour navigation
+  - Cards responsive
+  - Formulaires adaptés mobile
+  - Images optimisées
+
+� BASE DE DONNÉES
+=================
+□ Ajouter tables manquantes
+  - table notifications
+  - table messages (chat)
+  - table favoris
+  - table logs_activite
+
+□ Ajouter index pour performances
+  - Index sur email (table membre)
+  - Index sur id_membre (table objet)
+  - Index sur date_emprunt (table emprunt)
+
+□ Ajouter contraintes
+  - Vérifier intégrité référentielle
+  - Ajouter contraintes CHECK
+  - Valeurs par défaut appropriées
+
+✅ Table tache créée pour to-do list (FAIT)
+
+🧪 TESTS ET VALIDATION
+=====================
+□ Tester toutes les pages
+  - Navigation entre pages
+  - Formulaires (validation + soumission)
+  - Gestion des erreurs
+  - Affichage responsive
+
+□ Tester la sécurité
+  - Tentatives d'injection SQL
+  - Accès non autorisés
+  - Upload de fichiers malveillants
+  - Protection des sessions
+
+□ Tests de performance
+  - Temps de chargement des pages
+  - Optimisation des requêtes
+  - Compression des images
+  - Cache navigateur
+
+🎯 ORDRE DE PRIORITÉ RECOMMANDÉ
+==============================
+1. ✅ index.php (page d'accueil)
+2. ✅ liste_objet.php (navigation essentielle)
+3. ✅ ajouter_objet.php (fonctionnalité core)
+4. ✅ detail_objet.php (compléter la navigation)
+5. ✅ mes_objets.php (gestion utilisateur)
+6. ✅ profil.php (compte utilisateur)
+7. ✅ Sécurisation SQL (critique)
+8. ✅ historique.php (fonctionnalité avancée)
+9. ✅ Tests et optimisations (qualité)
+
+
+
