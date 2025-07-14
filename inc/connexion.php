@@ -1,7 +1,7 @@
 <?php
 session_start();
 ini_set("display_errors", "1");
-
+//de aona
 function dbconnect()
 {
     static $connect = null;
