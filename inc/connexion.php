@@ -7,7 +7,7 @@ function dbconnect()
     static $connect = null;
 
     if ($connect === null) {
-        $connect = mysqli_connect('localhost', 'ETU4087', '5Eh4iq1O', 'db_s2_ETU004087');
+        $connect = mysqli_connect('localhost', 'root', '', 'exam_v1');
 
         if (!$connect) {
             die('Erreur de connexion à la base de données : ' . mysqli_connect_error());
